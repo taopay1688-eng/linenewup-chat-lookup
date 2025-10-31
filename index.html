@@ -21,6 +21,7 @@
     .ai{background:#27ae60}
     .human{background:#e74c3c}
     .unknown{background:#95a5a6}
+    #result iframe{width:100%;height:600px;border:none}
   </style>
 </head>
 <body>
@@ -36,58 +37,15 @@
     async function lookup() {
       const userId = document.getElementById('user_id').value;
       const pass = document.getElementById('pass').value;
-      const result = document.getElementById('result');
       
       if (!userId) return alert('請輸入 user_id');
       
-      result.innerHTML = '<p>查詢中...</p>';
+      const apiUrl = `https://epzzkliqpavsyonqenug.supabase.co/functions/v1/chat-lookup?user_id=${userId}&pass=${pass}`;
       
-      try {
-        const res = await fetch(`https://epzzkliqpavsyonqenug.supabase.co/functions/v1/chat-lookup?user_id=${userId}&pass=${pass}`);
-        if (!res.ok) throw new Error('密碼錯誤或無權限');
-        
-        const data = await res.json();
-        const status = data.status || 'unknown';
-        const logs = data.logs || [];
-        
-        let html = `<p style="text-align:center"><b>狀態：</b>
-          <span class="status ${status === 'ai' ? 'ai' : status === 'human' ? 'human' : 'unknown'}">
-            ${status === 'ai' ? 'AI 模式' : status === 'human' ? '真人模式' : '未知'}
-          </span>
-        </p>`;
-        
-        if (!logs.length) {
-          html += `<p style="text-align:center;color:#7f8c8d">無對話紀錄</p>`;
-        } else {
-          // 匯出 Excel
-          const csv = [
-            ["時間", "用戶說", "Bot 回應"],
-            ...logs.map(l => [
-              new Date(l.created_at).toLocaleString('zh-TW'),
-              (l.user_message || '').replace(/\n/g, ' '),
-              (l.bot_response || '').replace(/\n/g, ' ')
-            ])
-          ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
-          
-          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-          const url = URL.createObjectURL(blob);
-          
-          html += `<button class="export-btn" onclick="window.location.href='${url}'" download="${userId}_對話紀錄.csv">匯出 Excel</button>
-                   <h2>最近 ${logs.length} 筆對話</h2><table>
-                   <tr><th>時間</th><th>用戶說</th><th>Bot 回應</th></tr>`;
-          for (const l of logs) {
-            const t = new Date(l.created_at).toLocaleString('zh-TW');
-            const u = (l.user_message || '').replace(/\n/g, '<br>');
-            const b = (l.bot_response || '').replace(/\n/g, '<br>');
-            html += `<tr><td>${t}</td><td>${u}</td><td>${b}</td></tr>`;
-          }
-          html += `</table>`;
-        }
-        
-        result.innerHTML = html;
-      } catch (err) {
-        result.innerHTML = `<p style="color:red;text-align:center">錯誤：${err.message}</p>`;
-      }
+      const result = document.getElementById('result');
+      
+      // 直接嵌入 iframe 顯示 API 回傳的 HTML
+      result.innerHTML = `<iframe src="${apiUrl}"></iframe>`;
     }
   </script>
 </body>
